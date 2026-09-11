@@ -5,9 +5,9 @@
 version: '3.9'
 
 services:
-  # ---------- PostgreSQL ----------
+  # ---------- PostgreSQL + PostGIS ----------
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: slm_dev

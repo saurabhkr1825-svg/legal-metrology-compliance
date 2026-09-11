@@ -1,6 +1,6 @@
-import { createUser } from '../services/user.service';
+import { createUser } from '../../services/user.service';
 import { UserRole } from '@slm/shared';
-import pool from '../db';
+import pool from '../index';
 
 /**
  * Development seed users.
