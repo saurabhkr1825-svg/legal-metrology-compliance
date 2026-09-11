@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "migrate": "ts-node src/db/migrate.ts",
-    "seed:dev": "ts-node src/db/seeds/dev-users.ts"
+    "seed:dev": "ts-node src/db/seeds/dev-users.ts",
+    "seed:rules": "ts-node src/db/seeds/default-rules.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

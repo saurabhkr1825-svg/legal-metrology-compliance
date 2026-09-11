@@ -55,4 +55,27 @@ describe('Role-Based Access Control Middleware', () => {
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(401);
   });
+
+  it('should allow supervisor for review endpoints', () => {
+    const middleware = requireRole([UserRole.SUPERVISOR, UserRole.ADMIN]);
+    const req = mockRequest({ id: 'sup-1', role: UserRole.SUPERVISOR });
+    const res = mockResponse();
+    const next = jest.fn();
+
+    middleware(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  it('should deny field officer from review endpoints', () => {
+    const middleware = requireRole([UserRole.SUPERVISOR, UserRole.ADMIN]);
+    const req = mockRequest({ id: 'off-1', role: UserRole.FIELD_OFFICER });
+    const res = mockResponse();
+    const next = jest.fn();
+
+    middleware(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
 });

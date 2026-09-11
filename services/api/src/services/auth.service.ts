@@ -105,6 +105,57 @@ export async function login(
   return { user, token };
 }
 
+export async function refreshAccessToken(refreshToken: string): Promise<{ user: User; token: AuthToken } | null> {
+  const payload = verifyToken(refreshToken);
+  if (!payload || !payload.userId) {
+    return null;
+  }
+
+  const userWithHash = await getUserByEmail(payload.email);
+  if (!userWithHash || !userWithHash.isActive) {
+    return null;
+  }
+
+  const newPayload: JwtPayload = {
+    userId: userWithHash.id,
+    email: userWithHash.email,
+    role: userWithHash.role,
+  };
+
+  const newAccessToken = jwt.sign(newPayload, config.jwt.secret, {
+    expiresIn: config.jwt.accessExpiry,
+  });
+
+  const newRefreshToken = jwt.sign(newPayload, config.jwt.secret, {
+    expiresIn: config.jwt.refreshExpiry,
+  });
+
+  const token: AuthToken = {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    expiresIn: config.jwt.accessExpiry,
+  };
+
+  const { passwordHash, ...user } = userWithHash;
+  return { user, token };
+}
+
+export async function logoutUser(
+  userId: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<void> {
+  await logAuditEvent({
+    userId,
+    action: AuditAction.USER_LOGOUT,
+    resourceType: 'user',
+    resourceId: userId,
+    metadata: { success: true },
+    ipAddress,
+    userAgent,
+  });
+}
+
 export function verifyToken(token: string): JwtPayload | null {
   try {
     const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;

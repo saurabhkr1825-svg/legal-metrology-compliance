@@ -75,4 +75,12 @@ describe('Authentication & Password Security', () => {
       expect(decoded).toBeNull();
     });
   });
+
+  describe('Refresh Token Handling', () => {
+    it('should reject invalid or expired refresh tokens', async () => {
+      const { refreshAccessToken } = await import('../src/services/auth.service');
+      const result = await refreshAccessToken('invalid-token');
+      expect(result).toBeNull();
+    });
+  });
 });

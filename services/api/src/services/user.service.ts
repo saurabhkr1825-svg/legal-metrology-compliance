@@ -106,6 +106,50 @@ export async function getUserById(id: string): Promise<User | null> {
   };
 }
 
+export async function listUsers(
+  role?: UserRole,
+  limit: number = 50,
+  offset: number = 0
+): Promise<{ items: User[]; total: number }> {
+  const conditions: string[] = [];
+  const params: any[] = [];
+  let paramIndex = 1;
+
+  if (role) {
+    conditions.push(`role = $${paramIndex++}`);
+    params.push(role);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const countRes = await query(`SELECT COUNT(*) FROM users ${whereClause}`, params);
+  const total = parseInt(countRes.rows[0].count, 10);
+
+  const queryParams = [...params, limit, offset];
+  const dataRes = await query(
+    `SELECT id, email, name, role, phone, region, department, is_active, created_at, updated_at
+     FROM users ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+    queryParams
+  );
+
+  const items = dataRes.rows.map((row: any) => ({
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    role: row.role as UserRole,
+    phone: row.phone,
+    region: row.region,
+    department: row.department,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+
+  return { items, total };
+}
+
 export async function updateUserStatus(id: string, isActive: boolean): Promise<User | null> {
   const res = await query(
     `UPDATE users

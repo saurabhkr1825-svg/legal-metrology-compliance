@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { InspectionStatus, UserRole } from '@slm/shared';
-import { createInspection, getInspectionById, getInspectionsByOfficer, getInspectionByClientUuid } from '../services/inspection.service';
+import { InspectionStatus, InspectionResult, UserRole } from '@slm/shared';
+import {
+  createInspection,
+  getInspectionById,
+  listInspections,
+  getInspectionByClientUuid,
+  updateInspectionStatus,
+  reviewInspection,
+} from '../services/inspection.service';
 import { sendSuccess, sendError } from '../middleware/response';
 
 const CreateInspectionSchema = z.object({
@@ -22,6 +29,16 @@ const CreateInspectionSchema = z.object({
     accuracy: z.number().optional(),
     timestamp: z.string().datetime().optional().transform((val) => val ? new Date(val) : undefined),
   }).optional(),
+  notes: z.string().max(1000).optional(),
+});
+
+const UpdateStatusSchema = z.object({
+  status: z.nativeEnum(InspectionStatus),
+});
+
+const ReviewInspectionSchema = z.object({
+  reviewedDeclaration: z.record(z.string(), z.any()),
+  result: z.nativeEnum(InspectionResult),
   notes: z.string().max(1000).optional(),
 });
 
@@ -94,8 +111,26 @@ export async function listInspectionsHandler(req: Request, res: Response): Promi
   const page = Math.max(parseInt(req.query.page as string || '1', 10), 1);
   const offset = (page - 1) * limit;
 
-  // Officers can only list their own inspections; admins/supervisors could list more (or pass officerId filter)
-  const result = await getInspectionsByOfficer(user.id, limit, offset);
+  // Officers can only list their own inspections; admins/supervisors can list all or filter by officerId
+  let targetOfficerId: string | undefined = undefined;
+  if (user.role === UserRole.FIELD_OFFICER) {
+    targetOfficerId = user.id;
+  } else if (req.query.officerId) {
+    targetOfficerId = req.query.officerId as string;
+  }
+
+  const status = req.query.status as InspectionStatus | undefined;
+  const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+  const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+  const result = await listInspections({
+    officerId: targetOfficerId,
+    status,
+    startDate,
+    endDate,
+    limit,
+    offset,
+  });
 
   sendSuccess(res, {
     items: result.items,
@@ -104,4 +139,84 @@ export async function listInspectionsHandler(req: Request, res: Response): Promi
     pageSize: limit,
     hasMore: offset + result.items.length < result.total,
   });
+}
+
+export async function updateInspectionStatusHandler(req: Request, res: Response): Promise<void> {
+  const user = req.user!;
+  const { id } = req.params;
+
+  const parseResult = UpdateStatusSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    sendError(res, 'VALIDATION_ERROR', 'Invalid status payload', 400, {
+      errors: parseResult.error.issues,
+    });
+    return;
+  }
+
+  const existing = await getInspectionById(id);
+  if (!existing) {
+    sendError(res, 'NOT_FOUND', 'Inspection not found', 404);
+    return;
+  }
+
+  // Check permissions: Officers can only update their own inspections
+  if (existing.officerId !== user.id && user.role === UserRole.FIELD_OFFICER) {
+    sendError(res, 'FORBIDDEN', 'Access denied to this inspection', 403);
+    return;
+  }
+
+  try {
+    const updated = await updateInspectionStatus({
+      inspectionId: id,
+      newStatus: parseResult.data.status,
+      userId: user.id,
+    });
+
+    if (!updated) {
+      sendError(res, 'NOT_FOUND', 'Inspection not found', 404);
+      return;
+    }
+
+    sendSuccess(res, { inspection: updated });
+  } catch (err: any) {
+    sendError(res, 'INVALID_TRANSITION', err.message, 400);
+  }
+}
+
+export async function reviewInspectionHandler(req: Request, res: Response): Promise<void> {
+  const user = req.user!;
+  const { id } = req.params;
+
+  const parseResult = ReviewInspectionSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    sendError(res, 'VALIDATION_ERROR', 'Invalid review payload', 400, {
+      errors: parseResult.error.issues,
+    });
+    return;
+  }
+
+  const existing = await getInspectionById(id);
+  if (!existing) {
+    sendError(res, 'NOT_FOUND', 'Inspection not found', 404);
+    return;
+  }
+
+  try {
+    const reviewed = await reviewInspection({
+      inspectionId: id,
+      reviewerId: user.id,
+      reviewedDeclaration: parseResult.data.reviewedDeclaration as any,
+      result: parseResult.data.result,
+      notes: parseResult.data.notes,
+    });
+
+    if (!reviewed) {
+      sendError(res, 'NOT_FOUND', 'Inspection not found', 404);
+      return;
+    }
+
+    sendSuccess(res, { inspection: reviewed });
+  } catch (err: any) {
+    sendError(res, 'REVIEW_FAILED', err.message, 400);
+  }
 }

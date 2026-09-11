@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../db';
-import { Inspection, InspectionStatus, InspectionResult, VALID_STATUS_TRANSITIONS, ImageMetadata, GeoLocation } from '@slm/shared';
+import { Inspection, InspectionStatus, InspectionResult, VALID_STATUS_TRANSITIONS, ImageMetadata, GeoLocation, Declaration } from '@slm/shared';
 import { logAuditEvent } from './audit.service';
 import { AuditAction } from '@slm/shared';
 
@@ -19,6 +19,23 @@ export interface UpdateInspectionStatusData {
   inspectionId: string;
   newStatus: InspectionStatus;
   userId: string;
+}
+
+export interface ListInspectionsFilters {
+  officerId?: string;
+  status?: InspectionStatus;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ReviewInspectionData {
+  inspectionId: string;
+  reviewerId: string;
+  reviewedDeclaration: Declaration;
+  result: InspectionResult;
+  notes?: string;
 }
 
 function mapRowToInspection(row: any): Inspection {
@@ -95,16 +112,97 @@ export async function getInspectionsByOfficer(
   limit: number = 20,
   offset: number = 0
 ): Promise<{ items: Inspection[]; total: number }> {
-  const countRes = await query('SELECT COUNT(*) FROM inspections WHERE officer_id = $1', [officerId]);
+  return listInspections({ officerId, limit, offset });
+}
+
+export async function listInspections(
+  filters: ListInspectionsFilters = {}
+): Promise<{ items: Inspection[]; total: number }> {
+  const { officerId, status, startDate, endDate, limit = 20, offset = 0 } = filters;
+
+  const conditions: string[] = [];
+  const params: any[] = [];
+  let paramIndex = 1;
+
+  if (officerId) {
+    conditions.push(`officer_id = $${paramIndex++}`);
+    params.push(officerId);
+  }
+
+  if (status) {
+    conditions.push(`status = $${paramIndex++}`);
+    params.push(status);
+  }
+
+  if (startDate) {
+    conditions.push(`created_at >= $${paramIndex++}`);
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    conditions.push(`created_at <= $${paramIndex++}`);
+    params.push(endDate);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const countRes = await query(`SELECT COUNT(*) FROM inspections ${whereClause}`, params);
   const total = parseInt(countRes.rows[0].count, 10);
 
-  const res = await query(
-    'SELECT * FROM inspections WHERE officer_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
-    [officerId, limit, offset]
+  const queryParams = [...params, limit, offset];
+  const dataRes = await query(
+    `SELECT * FROM inspections ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+    queryParams
   );
 
-  const items = res.rows.map(mapRowToInspection);
+  const items = dataRes.rows.map(mapRowToInspection);
   return { items, total };
+}
+
+export async function reviewInspection(data: ReviewInspectionData): Promise<Inspection | null> {
+  const current = await getInspectionById(data.inspectionId);
+  if (!current) return null;
+
+  // Review can only be applied to inspections in REVIEW_REQUIRED or PROCESSING status
+  if (current.status !== InspectionStatus.REVIEW_REQUIRED && current.status !== InspectionStatus.PROCESSING) {
+    throw new Error(
+      `Cannot review inspection in ${current.status} status. Must be REVIEW_REQUIRED or PROCESSING.`
+    );
+  }
+
+  const res = await query(
+    `UPDATE inspections
+     SET status = $1,
+         result = $2,
+         reviewed_declaration = $3,
+         notes = COALESCE($4, notes),
+         reviewed_at = NOW(),
+         completed_at = NOW(),
+         updated_at = NOW()
+     WHERE id = $5
+     RETURNING *`,
+    [
+      InspectionStatus.COMPLETED,
+      data.result,
+      JSON.stringify(data.reviewedDeclaration),
+      data.notes || null,
+      data.inspectionId,
+    ]
+  );
+
+  if (res.rows.length === 0) return null;
+
+  const updated = mapRowToInspection(res.rows[0]);
+
+  await logAuditEvent({
+    userId: data.reviewerId,
+    action: AuditAction.INSPECTION_REVIEWED,
+    resourceType: 'inspection',
+    resourceId: data.inspectionId,
+    changes: { from: current.status, to: InspectionStatus.COMPLETED, result: data.result },
+  });
+
+  return updated;
 }
 
 export async function updateInspectionStatus(data: UpdateInspectionStatusData): Promise<Inspection | null> {
