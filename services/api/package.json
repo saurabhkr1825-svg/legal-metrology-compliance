@@ -1,0 +1,31 @@
+{
+  "name": "@slm/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart Legal Metrology REST API",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.4.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "ts-node-dev": "^2.0.0",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/uuid": "^10.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "@types/jest": "^29.5.0"
+  }
+}

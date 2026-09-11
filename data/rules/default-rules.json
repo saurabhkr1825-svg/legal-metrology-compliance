@@ -1,0 +1,166 @@
+{
+  "version": "1.0.0",
+  "effectiveDate": "2026-01-01",
+  "rules": [
+    {
+      "ruleId": "LM-001",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Manufacturer Name Required",
+      "description": "Every pre-packaged commodity shall bear the name of the manufacturer or packer.",
+      "severity": "CRITICAL",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "manufacturerName",
+          "operator": "exists",
+          "message": "Manufacturer/packer name is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-002",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Manufacturer Address Required",
+      "description": "Complete address of the manufacturer or packer must be declared.",
+      "severity": "CRITICAL",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "manufacturerAddress",
+          "operator": "exists",
+          "message": "Manufacturer/packer address is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-003",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Commodity Name Required",
+      "description": "Name of the commodity must be declared on the label.",
+      "severity": "CRITICAL",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "commodityName",
+          "operator": "exists",
+          "message": "Commodity name is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-004",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Net Quantity Required",
+      "description": "Net quantity of the commodity must be declared.",
+      "severity": "CRITICAL",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "netQuantity",
+          "operator": "exists",
+          "message": "Net quantity is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-005",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "MRP Required",
+      "description": "Maximum Retail Price (inclusive of all taxes) must be declared.",
+      "severity": "CRITICAL",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "mrp",
+          "operator": "exists",
+          "message": "MRP is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-006",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Manufacture Date Required",
+      "description": "Date of manufacture or packing must be declared.",
+      "severity": "HIGH",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "manufactureDate",
+          "operator": "exists",
+          "message": "Date of manufacture/packing is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-007",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Best Before / Use By Required",
+      "description": "Best before or use-by date must be declared.",
+      "severity": "HIGH",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "bestBefore",
+          "operator": "exists",
+          "message": "Best-before or use-by date is missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-008",
+      "version": "1.0",
+      "category": "mandatory_declarations",
+      "name": "Consumer Care Details Required",
+      "description": "Consumer care contact details must be declared.",
+      "severity": "MEDIUM",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "consumerCare",
+          "operator": "exists",
+          "message": "Consumer care/helpline details are missing from the label."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-009",
+      "version": "1.0",
+      "category": "pricing",
+      "name": "Unit Sale Price Required for Scheduled Commodity",
+      "description": "Unit sale price is required for commodities listed in Schedule II.",
+      "severity": "MEDIUM",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "unitSalePrice",
+          "operator": "exists",
+          "message": "Unit sale price is missing (required for scheduled commodities)."
+        }
+      ]
+    },
+    {
+      "ruleId": "LM-010",
+      "version": "1.0",
+      "category": "font_size",
+      "name": "MRP Font Size Minimum",
+      "description": "MRP must be printed in a font size not less than the prescribed minimum. If physical measurement is unavailable, flag for review.",
+      "severity": "HIGH",
+      "enabled": true,
+      "conditions": [
+        {
+          "field": "mrpFontSizeMm",
+          "operator": "exists",
+          "message": "Cannot determine physical MRP font size — REVIEW_REQUIRED."
+        }
+      ]
+    }
+  ]
+}

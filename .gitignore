@@ -1,0 +1,60 @@
+# Node
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+.npm
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+.venv/
+
+# MinIO / Object Storage
+*.minio.sys/
+
+# Postgres data
+pgdata/
+
+# Development tracking (local only, not committed)
+PROGRESS.md
+TODO.md
+docs/PHASE*_GATE_REPORT.md

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "user-001",
+    "email": "officer@lm.gov.in",
+    "name": "Rajesh Kumar",
+    "role": "FIELD_OFFICER",
+    "phone": "+91-9876543210",
+    "region": "Delhi NCR",
+    "department": "Legal Metrology — District East",
+    "isActive": true
+  },
+  {
+    "id": "user-002",
+    "email": "supervisor@lm.gov.in",
+    "name": "Priya Sharma",
+    "role": "SUPERVISOR",
+    "phone": "+91-9876543211",
+    "region": "Delhi NCR",
+    "department": "Legal Metrology — State HQ",
+    "isActive": true
+  },
+  {
+    "id": "user-003",
+    "email": "admin@lm.gov.in",
+    "name": "Vikram Singh",
+    "role": "ADMIN",
+    "phone": "+91-9876543212",
+    "region": "National",
+    "department": "Legal Metrology — Central",
+    "isActive": true
+  }
+]
